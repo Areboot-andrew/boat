@@ -1,0 +1,59 @@
+{
+  "logLevel": "warn",
+  "rtsp": true,
+  "rtspAddress": ":8554",
+  "rtmp": false,
+  "hls": true,
+  "hlsAddress": ":8888",
+  "hlsVariant": "mpegts",
+  "webrtc": true,
+  "webrtcAddress": ":8889",
+  "webrtcAdditionalHosts": [
+    "192.168.10.50",
+    "100.68.157.23"
+  ],
+  "webrtcLocalTCPAddress": ":8189",
+  "srt": false,
+  "paths": {
+    "cam1raw": {
+      "source": "rtsp://192.168.10.6:554/av0_1",
+      "rtspTransport": "tcp",
+      "sourceOnDemand": true,
+      "sourceOnDemandStartTimeout": "30s",
+      "sourceOnDemandCloseAfter": "10s"
+    },
+    "cam1web": {
+      "source": "publisher",
+      "runOnDemand": "/usr/bin/python3 /opt/harpoon/config/camera_worker.py cam1 web",
+      "runOnDemandRestart": true,
+      "runOnDemandStartTimeout": "30s",
+      "runOnDemandCloseAfter": "15s"
+    },
+    "cam1": {
+      "source": "rtsp://127.0.0.1:8554/cam1raw",
+      "rtspTransport": "tcp",
+      "sourceOnDemand": true,
+      "sourceOnDemandStartTimeout": "30s",
+      "sourceOnDemandCloseAfter": "10s"
+    },
+    "cam2raw": {
+      "source": "publisher",
+      "runOnInit": "/usr/bin/python3 /opt/harpoon/config/camera_worker.py cam2 udp",
+      "runOnInitRestart": true
+    },
+    "cam2web": {
+      "source": "publisher",
+      "runOnDemand": "/usr/bin/python3 /opt/harpoon/config/camera_worker.py cam2 web",
+      "runOnDemandRestart": true,
+      "runOnDemandStartTimeout": "30s",
+      "runOnDemandCloseAfter": "15s"
+    },
+    "cam2": {
+      "source": "rtsp://127.0.0.1:8554/cam2raw",
+      "rtspTransport": "tcp",
+      "sourceOnDemand": true,
+      "sourceOnDemandStartTimeout": "30s",
+      "sourceOnDemandCloseAfter": "10s"
+    }
+  }
+}

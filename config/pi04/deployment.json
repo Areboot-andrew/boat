@@ -1,0 +1,18 @@
+{
+  "note": "Verified reference inventory 2026-10-15; not an automatic installer or flight-controller configuration",
+  "board": "Pi04",
+  "hostname": "harpoon-pi5-04",
+  "lan_address": "192.168.10.50/24",
+  "gateway": "192.168.10.1",
+  "tailscale_ip": "100.68.157.23",
+  "web_url": "http://100.68.157.23:8090/",
+  "webrtc_hosts": ["192.168.10.50", "100.68.157.23"],
+  "control_service_enabled": true,
+  "gps": {"port": "/dev/serial/by-id/usb-FTDI_FT231X_USB_UART_D30K20P6-if00-port0", "heading_offset_deg": -90, "heading_offset_physically_verified": false},
+  "bms": {"port": "/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0"},
+  "telemetry": {"transport": "tcp", "host": "100.68.157.23", "port": 14551, "system_id": 1, "component_id": 191, "battery_id": 10},
+  "camera1": {"source": "rtsp://192.168.10.6:554/av0_1", "qgc": "rtsp://100.68.157.23:8554/cam1", "h264_alternative": "rtsp://100.68.157.23:8554/cam1web", "source_resolution": "640x480", "web_fps": 15},
+  "camera2": {"ip": "192.168.10.5", "stream_main": "192.168.10.50:5600", "transport": "RTP/UDP", "codec": "H265", "payload_type": 97, "bitrate_kbps": 2048, "gop_seconds": 2, "source_resolution": "1920x1080", "source_fps": 30, "web_fps": 15, "qgc_verified_local": "rtsp://100.68.157.23:8554/cam2web", "qgc_unverified_timeout": "rtsp://100.68.157.23:8554/cam2"},
+  "groundstation_udp_push": false,
+  "credentials": "Stored separately in ACCESS-LOCAL.private.md; not in this repository"
+}

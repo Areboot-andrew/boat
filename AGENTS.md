@@ -1,5 +1,7 @@
 # Контекст HARPOON
 
+Pi04 update15.10: власник окремо дозволив введення вебконтролера в експлуатацію; служба enabled/active. Історична заборона запускати disabled Pi04 нижче не означає, що вона досі вимкнена. Перед діями читати свіжий стан і config/pi04/README.md; нових дозволів на рух цей запис не дає.
+
 **Public-export layout:** this checkout has no private HANDOFF-UA.md, SDarchives or oldwork directory. Selected deployment tools are in `tools/deploy/`; monitorassets in `sources/monitor-assets/`. The boardbuilder uses these versionedassets and no longer needs the oldprovisionpayload. PROJECT-MAP.md here is a public shortmap, not the owner's private operationaljournal. Where historical instructions below refer to ignoredwork, use DEPLOYMENT.md and inspect tools/deploy instead. No credentials are included.
 
 Пряма заборона власника (13.10.2026): **ніколи не змінювати нічого на польотнику**. Не записувати параметри (зокрема failsafe/arming/датчики/серво), не калібрувати, не прошивати, не скидати та не перезавантажувати польотник з власної ініціативи. Діагностика — лише читання. Зміни Raspberry/web не є дозволом змінювати польотник. Команди ARM/DISARM/режиму/серво/тяги агент виконує лише за окремим явним запитом власника; старі дозволи на тести не переносити на нові завдання. Чинний користувацький інтерфейс керування ця інструкція сама по собі не змінює.
