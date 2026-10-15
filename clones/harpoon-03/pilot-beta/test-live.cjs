@@ -31,7 +31,9 @@ vm.runInNewContext(src,ctx);window.harpoonLiveControl({panel,top,dialog,logsDial
  pad.axes[1]=1;await t.tick();assert.equal(packets.at(-1).throttle,0);
  pad.axes[1]=-1;await t.tick();assert.equal(packets.at(-1).throttle,.5);
  focused=false;events.blur();assert.equal(t.read().lease,'L','visible joystick session survives blur');await t.tick();assert.equal(packets.at(-1).action,'tick','joystick sends while unfocused');assert.equal(packets.at(-1).throttle,.5);
- document.hidden=true;events.visibilitychange();assert.equal(t.read().lease,null,'hidden page still stops');assert.equal(packets.at(-1).action,'stop');document.hidden=false;
+ document.hidden=true;events.visibilitychange();assert.equal(t.read().lease,'L','hidden page retains session');assert.equal(packets.at(-1).action,'tick');assert.equal(packets.at(-1).throttle,0);assert.equal(packets.at(-1).resync,true);const hiddenCount=packets.length;pad=null;await t.tick();assert.equal(packets.length,hiddenCount,'hidden page sends no motion and does not stop on unavailable gamepad');assert.equal(t.read().lease,'L');
+ events.pagehide();assert.equal(t.read().lease,'L','pagehide never releases or disarms');assert.equal(packets.at(-1).action,'tick');assert.equal(packets.at(-1).throttle,0);
+ document.hidden=false;pad={connected:true,mapping:'standard',index:0,axes:[0,-1,0,0,1,1]};await t.tick();assert.equal(packets.at(-1).throttle,0,'return with high stick remains neutral');assert.equal(t.read().linkRecovering,true);pad.axes[1]=1;await t.tick();assert.equal(t.read().linkRecovering,false,'neutral returns same session');
  t.setup();pad.axes[4]=0;await t.tick();assert.equal(t.read().lease,null,'OFF stops while unfocused');pad.axes[4]=1;
  focused=true;
  for(const values of [[0,1],[1,0],[-1,1],[1,NaN],[1,undefined]]){t.setup({mode:4,armed:false});pad.axes[4]=values[0];pad.axes[5]=values[1];await t.tick();assert.equal(t.read().lease,null,'gate stops even in HOLD/disarmed');assert.equal(packets.at(-1).action,'stop');}

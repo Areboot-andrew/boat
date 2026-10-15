@@ -20,6 +20,14 @@ window.harpoonLiveControl=({panel,top,dialog,logsDialog,consolePage,sessions,pag
    if(!linkRecovering)log('LINK_PAUSE',why+' · сесія збережена; газ у нуль, кермо в центр');
    linkRecovering=true;nonce=null;keys.clear();cruise=null;servoTest=null;autoMode=false;
  }
+ function pausePage(){
+   keys.clear();cruise=null;servoTest=null;
+   if(!lease)return;
+   epoch++;recoverLink('Сторінка неактивна; ARM і сесію збережено');
+   // Best-effort neutral; server deadline also zeros outputs if this cannot arrive.
+   // Never renew hidden-page motion, release ownership, request HOLD or DISARM.
+   fetch('/control/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'tick',lease,seq:++seq,nonce:null,steer:0,throttle:0,throttle_cap:0,resync:true}),keepalive:true}).catch(()=>log('LINK','Нейтраль не доставлена; діє серверний timeout'));
+ }
  function log(kind,text){lines.push(new Date().toLocaleTimeString()+' ['+kind+'] '+text);while(lines.length>250)lines.shift();consolePage.querySelector('pre').textContent=lines.join('\n');}
  function cancelConfirm(){confirmAction=null;confirmUntil=0;}
  function confirmed(action){if(confirmAction===action&&Date.now()<confirmUntil){cancelConfirm();return true;}confirmAction=action;confirmUntil=Date.now()+10000;keys.clear();cruise=null;
@@ -132,7 +140,7 @@ window.harpoonLiveControl=({panel,top,dialog,logsDialog,consolePage,sessions,pag
    if([4,5].some(i=>p.axes[i]<.95)){switchReady=true;return;}
    if(switchReady){switchReady=false;void startBySwitch();}
  }
- async function tick(){watchPadGate();if(!lease||busy||autoStarting)return;if(document.hidden){stop('Вкладку приховано');return;}if(!fresh())recoverLink('Немає свіжої телеметрії');busy=true;const token=epoch;
+ async function tick(){if(document.hidden)return;watchPadGate();if(!lease||busy||autoStarting)return;if(!fresh())recoverLink('Немає свіжої телеметрії');busy=true;const token=epoch;
    if(autoMode){try{if(keys.size){stop('Ручне перехоплення: автомаршрут зупинено');return;}const d=await post({action:'auto_tick',seq:++seq,nonce});if(token===epoch&&lease){if(d.network_paused){recoverLink('Автомаршрут призупинено через зв’язок');return;}if(d.finished){stop('Маршрут завершено');return;}nonce=d.nonce;output.textContent='АВТО · точка '+(state.autonav?.progress?.point||'—')+' · '+Math.round((state.applied?.[1]||0)*100)+'%';}}catch(e){if(token!==epoch)return;log('AUTO',e.message);if(!e.http||e.http>=500)recoverLink('Відповідь автомаршруту втрачено');else stop('Автомаршрут припинено: '+e.message);}finally{busy=false;}return;}
    try{let steer=0,throttle=0;const activeCap=drivingCap();if(nonce&&!confirmAction&&state.mode===0){if(source.value==='gamepad'){const p=getPad();if(!p)throw Error('Джойстик відключився');const [s,t]=padAxes(p);steer=s*.6;throttle=state.armed?(t<.03?0:t*activeCap):0;}else{steer=(keys.has('ArrowRight')?.6:0)-(keys.has('ArrowLeft')?.6:0);throttle=state.armed&&!keys.has('ArrowDown')?Math.min(cap(),cruise??(keys.has('ArrowUp')?cap():0)):0;}}
      if(servoTest){if(Date.now()>=servoTest.until||state.mode!==0||!state.armed||source.value!=='keyboard'||keys.size||confirmAction)servoTest=null;else steer=servoTest.steer;throttle=0;}
@@ -151,8 +159,8 @@ window.harpoonLiveControl=({panel,top,dialog,logsDialog,consolePage,sessions,pag
  for(const [attr,key] of [['left','ArrowLeft'],['right','ArrowRight'],['up','ArrowUp']]){const b=q('[data-'+attr+']');b.onpointerdown=e=>{if(lease&&source.value==='keyboard'&&!confirmAction){keys.add(key);b.setPointerCapture(e.pointerId);}};for(const ev of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(ev,()=>keys.delete(key));}
  window.addEventListener('keydown',e=>{if(!lease||source.value!=='keyboard'||confirmAction||dialog.open||logsDialog.open||document.querySelector('.auto-start-dialog')?.open||e.target.matches('input,select,textarea'))return;if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.code)){e.preventDefault();keys.add(e.code);if(e.code==='ArrowDown')cruise=null;}});
  window.addEventListener('keyup',e=>keys.delete(e.code));
- window.addEventListener('blur',()=>{keys.clear();if(source.value!=='gamepad'){cruise=null;servoTest=null;}log('FOCUS','Фокус втрачено; сесію збережено, натиснуті клавіші скинуто');});window.addEventListener('pagehide',()=>stop('Сторінка закрита'));
- document.addEventListener('visibilitychange',()=>{if(document.hidden)stop('Вкладку приховано');});
+ window.addEventListener('blur',()=>{keys.clear();if(source.value!=='gamepad'){cruise=null;servoTest=null;}log('FOCUS','Фокус втрачено; сесію збережено, натиснуті клавіші скинуто');});window.addEventListener('pagehide',pausePage);
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)pausePage();});
  window.addEventListener('gamepaddisconnected',()=>{if(source.value==='gamepad')stop('Джойстик відключено');});
  q('[data-telemetry]').onclick=()=>{keys.clear();logsDialog.close();pages[0].b.click();dialog.showModal();};
  q('[data-log]').onclick=()=>{keys.clear();dialog.close();logsDialog.showModal();};
