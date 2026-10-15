@@ -7,7 +7,7 @@ window.harpoonLiveControl=({panel,top,dialog,logsDialog,consolePage,sessions,pag
  let autoMode=false,autoStarting=false,servoTest=null;
  let linkRecovering=false,linkWarning=false;
  const source=q('select'),limit=q('input'),claim=q('[data-test]'),note=q('.beta-input-state'),output=q('output'),cruiseBtn=q('[data-cruise]');
- document.querySelector('.monitor-note').textContent='Pi03 · Керування: сесія → MANUAL → ARM. Один активний пілот; не подавай команди з QGC одночасно.';
+ document.querySelector('.monitor-note').textContent='Pi03 · Web v2026.10.15.4 · Керування: сесія → MANUAL → ARM. Один активний пілот; не подавай команди з QGC одночасно.';
  top.innerHTML='<span role="status">Очікування USB…</span><button data-action="check">PREARM</button><button data-action="manual" disabled>MANUAL</button><button data-action="arm" disabled>ARM</button><button data-action="disarm" disabled>DISARM</button><button class="beta-stop">STOP</button>';
  consolePage.querySelector('h3').textContent='Зв’язок, команди та проблеми';
  consolePage.querySelector('p').textContent='ACK — підтвердження прийняття команди, не доказ фізичного руху. Журнал служби також зберігається в journald на Pi.';
@@ -110,7 +110,7 @@ window.harpoonLiveControl=({panel,top,dialog,logsDialog,consolePage,sessions,pag
  source.onchange=()=>stop('Джерело вводу змінено');recover.onchange=render;
  limit.oninput=()=>{q('[data-cap]').textContent=limit.value+'%';keys.clear();cancelConfirm();if(cruise!==null)cruise=Math.min(cruise,cap());render();};
  cruiseBtn.onclick=()=>{if(cruise!==null){cruise=null;keys.clear();cancelConfirm();render();return;}if(!lease||source.value!=='keyboard'||!state?.armed)return;if(!confirmed('cruise'))return;cruise=cap();log('CRUISE','Утримання '+Math.round(cruise*100)+'%');render();};
- function watchPadGate(){if(lease&&source.value==='gamepad'){try{requirePadGate(getPad());drivingCap();}catch(e){log('INTERLOCK',e.message);stop(e.message);}}}
+ function watchPadGate(){if(document.hidden)return;if(lease&&source.value==='gamepad'){if(linkRecovering&&!getPad())return;try{requirePadGate(getPad());drivingCap();}catch(e){log('INTERLOCK',e.message);stop(e.message);}}}
  function switchContext(){return source.value==='gamepad'&&fresh()&&state.connected&&!(!state.armed&&'claim_blocked' in state?state.claim_blocked:state.blocked)&&!document.hidden&&document.hasFocus()&&!dialog.open&&!logsDialog.open&&!padConfig?.isOpen?.();}
  async function startBySwitch(){
    switchReady=false;switchStarting=true;const token=++epoch;
@@ -141,6 +141,11 @@ window.harpoonLiveControl=({panel,top,dialog,logsDialog,consolePage,sessions,pag
    if(switchReady){switchReady=false;void startBySwitch();}
  }
  async function tick(){if(document.hidden)return;watchPadGate();if(!lease||busy||autoStarting)return;if(!fresh())recoverLink('Немає свіжої телеметрії');busy=true;const token=epoch;
+   if(linkRecovering&&source.value==='gamepad'&&!getPad()){
+     try{await post({action:'tick',seq:++seq,nonce:null,steer:0,throttle:0,throttle_cap:0,resync:true});note.textContent='Сесію збережено; очікування джойстика та нейтралі';}
+     catch(e){if(token===epoch)log('LINK','Очікування відновлення: '+e.message);}
+     finally{busy=false;}return;
+   }
    if(autoMode){try{if(keys.size){stop('Ручне перехоплення: автомаршрут зупинено');return;}const d=await post({action:'auto_tick',seq:++seq,nonce});if(token===epoch&&lease){if(d.network_paused){recoverLink('Автомаршрут призупинено через зв’язок');return;}if(d.finished){stop('Маршрут завершено');return;}nonce=d.nonce;output.textContent='АВТО · точка '+(state.autonav?.progress?.point||'—')+' · '+Math.round((state.applied?.[1]||0)*100)+'%';}}catch(e){if(token!==epoch)return;log('AUTO',e.message);if(!e.http||e.http>=500)recoverLink('Відповідь автомаршруту втрачено');else stop('Автомаршрут припинено: '+e.message);}finally{busy=false;}return;}
    try{let steer=0,throttle=0;const activeCap=drivingCap();if(nonce&&!confirmAction&&state.mode===0){if(source.value==='gamepad'){const p=getPad();if(!p)throw Error('Джойстик відключився');const [s,t]=padAxes(p);steer=s*.6;throttle=state.armed?(t<.03?0:t*activeCap):0;}else{steer=(keys.has('ArrowRight')?.6:0)-(keys.has('ArrowLeft')?.6:0);throttle=state.armed&&!keys.has('ArrowDown')?Math.min(cap(),cruise??(keys.has('ArrowUp')?cap():0)):0;}}
      if(servoTest){if(Date.now()>=servoTest.until||state.mode!==0||!state.armed||source.value!=='keyboard'||keys.size||confirmAction)servoTest=null;else steer=servoTest.steer;throttle=0;}
@@ -161,7 +166,7 @@ window.harpoonLiveControl=({panel,top,dialog,logsDialog,consolePage,sessions,pag
  window.addEventListener('keyup',e=>keys.delete(e.code));
  window.addEventListener('blur',()=>{keys.clear();if(source.value!=='gamepad'){cruise=null;servoTest=null;}log('FOCUS','Фокус втрачено; сесію збережено, натиснуті клавіші скинуто');});window.addEventListener('pagehide',pausePage);
  document.addEventListener('visibilitychange',()=>{if(document.hidden)pausePage();});
- window.addEventListener('gamepaddisconnected',()=>{if(source.value==='gamepad')stop('Джойстик відключено');});
+ window.addEventListener('gamepaddisconnected',()=>{if(source.value==='gamepad'){if(document.hidden||linkRecovering)recoverLink('Джойстик тимчасово недоступний; очікування відновлення');else stop('Джойстик відключено');}});
  q('[data-telemetry]').onclick=()=>{keys.clear();logsDialog.close();pages[0].b.click();dialog.showModal();};
  q('[data-log]').onclick=()=>{keys.clear();dialog.close();logsDialog.showModal();};
  let lastFault=null;

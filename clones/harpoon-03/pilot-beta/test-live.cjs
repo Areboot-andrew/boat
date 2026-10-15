@@ -2,12 +2,12 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 function el(){const children=new Map();return {value:'25',checked:false,disabled:false,open:false,dataset:{},textContent:'',style:{},querySelector(s){if(!children.has(s))children.set(s,el());return children.get(s)},querySelectorAll(){return ['check','manual','arm','disarm'].map(a=>{const b=this.querySelector('[data-action='+a+']');b.dataset.action=a;return b})},append(){},remove(){},addEventListener(){},showModal(){this.open=true},close(){this.open=false},matches(){return false}};}
 const panel=el(),top=el(),dialog=el(),logsDialog=el(),consolePage=el(),sessions=el();panel.querySelector('select').value='keyboard';
-const events={},packets=[],window={addEventListener(k,v){events[k]=v}},doc=el();
+const events={},packets=[],intervals=[],window={addEventListener(k,v){events[k]=v}},doc=el();
 let focused=true;
 const document={createElement:el,querySelector:s=>doc.querySelector(s),hasFocus:()=>focused,hidden:false,addEventListener:(k,v)=>events[k]=v};
 let pad=null,failPoll=false,failTick=false,failStart=false,releaseStop=null,delayStop=false;
 const ready={connected:true,armed:false,mode:4,state:3,blocked:null,claim_blocked:null,lease_active:false,events:[],parameters:{},applied:[0,0],connection_phase:'ready'};
-const ctx={window,document,navigator:{getGamepads:()=>pad?[pad]:[]},setInterval(){},setTimeout(){},AbortSignal:{timeout(){}},Date,Math,Number,Set,
+const ctx={window,document,navigator:{getGamepads:()=>pad?[pad]:[]},setInterval(fn,ms){intervals.push({fn,ms})},setTimeout(){},AbortSignal:{timeout(){}},Date,Math,Number,Set,
  fetch:async(url,o)=>{if(o?.method==='POST'){const p=JSON.parse(o.body);packets.push(p);if(failTick&&p.action==='tick'||failStart&&p.action==='auto_start')throw Error('lost reply');if(delayStop&&p.action==='emergency_stop')await new Promise(r=>releaseStop=r);return {ok:true,json:async()=>p.action==='claim'?{lease:'L'}:{nonce:'N'}}}if(failPoll&&url==='/control/status')throw Error('network gap');return {ok:true,json:async()=>url==='/diagnostics'?{problems:[]}:ready}}};
 let src=fs.readFileSync(__dirname+'/live-control.js','utf8');
 src=src.replace(/\};\s*$/,`window.test={setup(s={}){state={...${JSON.stringify(ready)},armed:true,mode:0,lease_active:true,...s};freshAt=Date.now();lease='L';nonce='N';confirmAction=null;cruise=null;linkRecovering=false;linkWarning=false;keys.clear();},expireTest(){servoTest.until=0},tick,poll,keys,stop,read:()=>({lease,cruise,linkRecovering}),setPadId:x=>padId=x};};`);
@@ -32,6 +32,8 @@ vm.runInNewContext(src,ctx);window.harpoonLiveControl({panel,top,dialog,logsDial
  pad.axes[1]=-1;await t.tick();assert.equal(packets.at(-1).throttle,.5);
  focused=false;events.blur();assert.equal(t.read().lease,'L','visible joystick session survives blur');await t.tick();assert.equal(packets.at(-1).action,'tick','joystick sends while unfocused');assert.equal(packets.at(-1).throttle,.5);
  document.hidden=true;events.visibilitychange();assert.equal(t.read().lease,'L','hidden page retains session');assert.equal(packets.at(-1).action,'tick');assert.equal(packets.at(-1).throttle,0);assert.equal(packets.at(-1).resync,true);const hiddenCount=packets.length;pad=null;await t.tick();assert.equal(packets.length,hiddenCount,'hidden page sends no motion and does not stop on unavailable gamepad');assert.equal(t.read().lease,'L');
+ for(const timer of intervals.filter(x=>x.ms===50))timer.fn();events.gamepaddisconnected();assert.equal(t.read().lease,'L','background gate timer and disconnect must preserve lease');
+ document.hidden=false;for(const timer of intervals.filter(x=>x.ms===50))timer.fn();await t.tick();assert.equal(t.read().lease,'L','wait for browser gamepad recovery');assert.equal(packets.at(-1).throttle,0);assert.equal(packets.at(-1).action,'tick');
  events.pagehide();assert.equal(t.read().lease,'L','pagehide never releases or disarms');assert.equal(packets.at(-1).action,'tick');assert.equal(packets.at(-1).throttle,0);
  document.hidden=false;pad={connected:true,mapping:'standard',index:0,axes:[0,-1,0,0,1,1]};await t.tick();assert.equal(packets.at(-1).throttle,0,'return with high stick remains neutral');assert.equal(t.read().linkRecovering,true);pad.axes[1]=1;await t.tick();assert.equal(t.read().linkRecovering,false,'neutral returns same session');
  t.setup();pad.axes[4]=0;await t.tick();assert.equal(t.read().lease,null,'OFF stops while unfocused');pad.axes[4]=1;
