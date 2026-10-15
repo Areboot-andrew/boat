@@ -5,6 +5,12 @@ from test_manual_critical import Tests
 from autonav import GPS,DEFAULTS
 
 class AuditTests(Tests):
+ def test_completion_preserves_arm(self):
+  c,l=self.start_critical_mission();c.mission.step=Mock(return_value=None)
+  c.control_step(time.monotonic()+.2)
+  self.assertIsNone(c.mission);self.assertEqual(c.intent,(0,0))
+  for call in c.parser.command_long_send.call_args_list:
+   self.assertNotEqual(call.args[2],400,'completion must not issue ARM/DISARM')
  def test_onboard_steps_without_browser_requests(self):
   c,l=self.start_critical_mission();start=time.monotonic()
   c.mission.step=Mock(return_value=(.1,.2));deadline=c.deadline

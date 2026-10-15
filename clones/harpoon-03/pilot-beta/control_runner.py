@@ -35,7 +35,7 @@ class BoardControl(engine.Control):
             p,h,s=self.nav_gps.read(self.mission.c)
             values=self.mission.step(p,h,s,now)
             if values is None:
-                self.stop('Маршрут завершено');self.command(engine.mav.MAV_CMD_COMPONENT_ARM_DISARM,0,0);return
+                self.stop('Маршрут завершено; ARM збережено');return
             steer,throttle=values;cap=self.mission.c['max_throttle']/100
             if any(type(v) not in (int,float) or not math.isfinite(v) for v in (steer,throttle,cap)) or not 0<=cap<=.5 or abs(steer)>.6 or not 0<=throttle<=cap:raise ValueError('Авто: недійсна команда навігації')
             self.target(steer,throttle,cap,now)

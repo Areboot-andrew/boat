@@ -26,7 +26,7 @@ vm.runInNewContext(src,ctx);window.harpoonLiveControl({panel,top,dialog,logsDial
  panel.querySelector('[data-cruise]').onclick();assert.equal(t.read().cruise,null);panel.querySelector('[data-cruise]').onclick();assert.equal(t.read().cruise,.25);
  t.keys.clear();panel.querySelector('input').value='50';panel.querySelector('input').oninput();await t.tick();assert.equal(packets.at(-1).throttle,.25,'raise cap must not raise cruise');
  t.setup();events.keydown({code:'Space',target:el()});assert.equal(t.read().lease,'L','Space is not STOP');
- events.blur();assert.equal(t.read().lease,null);assert.equal(packets.at(-1).action,'stop');
+ t.keys.add('ArrowUp');focused=false;const beforeBlur=packets.length;events.blur();assert.equal(t.read().lease,'L');assert.equal(packets.length,beforeBlur,'blur sends no STOP or DISARM');assert.equal(t.keys.size,0);assert.equal(t.read().cruise,null);await t.tick();assert.equal(packets.at(-1).action,'tick');assert.equal(packets.at(-1).throttle,0,'unfocused keyboard does not latch throttle');focused=true;
  panel.querySelector('select').value='gamepad';t.setup();t.setPadId(0);pad={connected:true,mapping:'standard',index:0,axes:[0,0,1,0,1,1]};await t.tick();assert.equal(packets.at(-1).steer,.6);assert.equal(packets.at(-1).throttle,.25,'center = half cap');
  pad.axes[1]=1;await t.tick();assert.equal(packets.at(-1).throttle,0);
  pad.axes[1]=-1;await t.tick();assert.equal(packets.at(-1).throttle,.5);
