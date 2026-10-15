@@ -1,0 +1,33 @@
+name: Board release packages
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install -r requirements-dev.txt
+      - run: |
+          node clones/harpoon-03/pilot-beta/test-live.cjs
+          node clones/harpoon-03/pilot-beta/test-pad.cjs
+          node clones/harpoon-03/pilot-beta/test-switch-start.cjs
+          node clones/harpoon-03/pilot-beta/test-route-editor.cjs
+          python tools/test_pull_update.py
+      - working-directory: clones/harpoon-03/pilot-beta
+        run: python -m unittest test_manual_critical test_network_recovery test_audit_fixes test_autonav test_smooth
+      - run: python tools/release.py "$RELEASE_TAG"
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+      - run: gh release create "$RELEASE_TAG" dist/release.json dist/pi*-app.tar.gz --verify-tag --title "$RELEASE_TAG" --notes "Board-specific application packages. Staging only; preserve local configs. See UPDATES.md."
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}

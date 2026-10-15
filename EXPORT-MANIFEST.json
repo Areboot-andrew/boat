@@ -2,14 +2,16 @@
   "source_date": "2026-10-15",
   "files": {
     ".gitattributes": "d60f352d0db1404c70afb4bb8b2ca3fd1c610572aa40720e8a0b7baa7885418c",
+    ".github/workflows/release.yml": "6fea857a65582281448bb30891acb721356495bdce2b226fcbaf10b485336938",
     ".github/workflows/tests.yml": "a50e4efad9896cc6f2f2ef46ac5603b91d1f54a65e0f80cb27822ea3a9ff6d0c",
-    ".gitignore": "da5d5de2561efb8eca4ccb1541e7611bce90accacfb8acba0c8d8dfacca3221e",
+    ".gitignore": "129048e8a625cf27ba842d042672dbadf0556fc2312ffb9b03b7c6daf55b355b",
     "AGENTS.md": "6df05a5d43e7a066192b9ba85245b1a07af603d2d4c5d7992429737ac44711f4",
     "DEPLOYMENT.md": "a01090eeb94f02582e73d3c205044985c3797ad24ad4ddc832e9b2bd6d719e67",
     "PROJECT-GUIDE.md": "0e7d24ee051b15971d050bab03e3a5da5d7707ff03fa5f47c9ac9c57b9d2e936",
     "PROJECT-MAP.md": "dfac319967c55c9eb23a10fb41cb8e7e4e5adb70a8a4dad74c826e48c340a684",
     "README.md": "515ad5af27e5357c48a36d276a6908514fffb0b9ad5d2bb94cf3f3905dfec7a0",
     "THIRD-PARTY.md": "03fc601c7e5290ccf06edba978c2b7ae4d522f3d783bb8508ee160413fca02e3",
+    "UPDATES.md": "68f68b5241f56b89b117f65298e049db53b2d4c581d6e3c405054d234a6501f0",
     "clones/harpoon-01/ssh_board.py": "57957182c59d4f052e859034cc145df91865768b059f707a28abc2c00b52f7d6",
     "clones/harpoon-02/diagnostics/harpoon-diagnostics.py": "3e455046c1d5b7bd25beae4a6a65de789668e90f823ee3ad627a6af25ba4c07f",
     "clones/harpoon-02/diagnostics/test_diagnostics.py": "a5bf7897a6d84e1e60251beddda9b17631ef232a7d0d102836abc8fb10810fdc",
@@ -96,7 +98,10 @@
     "tools/deploy/install-auditfix.py": "6d6d94953e7694aed6e26f799c9c9615413fb3480f41b23912e8f1a3280b6aa7",
     "tools/deploy/pi03-tail-telemetry-install.sh": "05e27e34c81e0d89809182be356a9b37cb611d2987060420ef8e741e1bdddc56",
     "tools/deploy/pi03-tail-telemetry-verify.sh": "3dba1a6248aa0bd894a7d1a1875d7196a8201bc2262e8fee885b01cc86bfa5d6",
-    "tools/deploy/pi03-tail-telemetry.conf": "7cc9e909f00cc1b2bfa10d0491f2e4c7d042b289b7aff176a54c26902d622944"
+    "tools/deploy/pi03-tail-telemetry.conf": "7cc9e909f00cc1b2bfa10d0491f2e4c7d042b289b7aff176a54c26902d622944",
+    "tools/pull_update.py": "7a19da739a332a79d57e384fed6b5561197468ce493f0ca2f81ec16a6c438a8d",
+    "tools/release.py": "77190103a7b749e55dd2354081e7f2a654eaaf2ed6808ec1cfee6073bb6df50f",
+    "tools/test_pull_update.py": "f683a7beff498d4a2962ba8a8996647d39da8b4dce720590bb9b15340b2ef91c"
   },
   "checks": "Known private password cells and private-key/token/authenticated-RTSP patterns; Python syntax. Not a guarantee against all possible secrets.",
   "excluded": "credentials, device state, old Git history, SD images/backups, archives, sessions, starter app"

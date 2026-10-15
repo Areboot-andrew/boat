@@ -21,3 +21,4 @@ outputs/
 logs/
 backups/
 **/latest-20261014/manifest.json
+dist/
