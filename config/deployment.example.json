@@ -1,0 +1,13 @@
+{
+  "note": "Reference inventory only; not automatically consumed by services",
+  "board": "CHOOSE_BOARD",
+  "hostname": "VERIFY_LIVE_HOSTNAME",
+  "ssh_host_key_sha256": "VERIFY_OUT_OF_BAND",
+  "lan_address": "192.168.10.50/24",
+  "gateway": "192.168.10.1",
+  "tailscale_ip": "SET_OWN_NODE_ADDRESS",
+  "telemetry": {"transport": "tcp", "port": 14551, "system_id": 1, "component_id": 191, "battery_id": 10},
+  "gps": {"port": "/dev/harpoon-gps-unconfigured", "heading_offset_deg": null},
+  "control_enabled": false,
+  "credentials": "Use private local storage; never commit passwords or keys"
+}

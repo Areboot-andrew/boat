@@ -1,0 +1,21 @@
+[Unit]
+Description=HARPOON Pi03 USB control, operator gated
+After=network.target
+[Service]
+User=harpoon
+Group=harpoon
+SupplementaryGroups=dialout
+WorkingDirectory=/opt/harpoon/web-control
+ExecStart=/opt/harpoon/mavlink-venv/bin/python /opt/harpoon/web-control/control_runner.py
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+RestrictAddressFamilies=AF_INET AF_UNIX
+StandardOutput=journal
+StandardError=journal
+[Install]
+WantedBy=multi-user.target

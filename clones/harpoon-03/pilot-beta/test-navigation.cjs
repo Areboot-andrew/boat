@@ -1,0 +1,10 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const code=fs.readFileSync(__dirname+'/navigation.js','utf8');
+const pieces=code.split('\n').filter(l=>l.includes('const meters=')||l.includes('const bearing='));
+const api=vm.runInNewContext(pieces.join('\n')+';({meters,bearing})');
+assert(Math.abs(api.bearing([0,0],[1,0])-0)<.01);
+assert(Math.abs(api.bearing([0,0],[0,1])-90)<.01);
+assert(Math.abs(api.bearing([0,0],[-1,0])-180)<.01);
+assert(Math.abs(api.meters([0,0],[0,.001])-111.195)<.1);
+assert(!/method\s*:\s*['"]POST|action\s*:\s*['"](?:arm|manual|tick)/.test(code));
+console.log('PASS navigation bearing/distance; navigation module has no control POST');

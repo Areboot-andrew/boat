@@ -1,0 +1,19 @@
+[Unit]
+Description=HARPOON Pi03 read-only PILOT beta preview
+After=network.target harpoon-gps-monitor.service
+
+[Service]
+User=harpoon
+WorkingDirectory=/opt/harpoon/pilot-beta
+ExecStart=/usr/bin/python3 /opt/harpoon/pilot-beta/server.py
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+Environment=PYTHONDONTWRITEBYTECODE=1
+
+[Install]
+WantedBy=multi-user.target

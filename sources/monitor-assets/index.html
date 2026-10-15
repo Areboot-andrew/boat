@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>HARPOON — керування</title>
+  <link rel="stylesheet" href="/leaflet.css">
+  <link rel="stylesheet" href="/hud.css">
+  <link rel="stylesheet" href="/economy.css">
+  <script src="/leaflet.js" defer></script>
+  <script src="/hud.js" defer></script>
+  <script src="/ui-tools.js?v=20261001-map-window" defer></script>
+  <script src="/reader.js" defer></script>
+  <script src="/camera-player.js?v=20261001-pip" defer></script>
+  <link rel="stylesheet" href="/ui-tools.css?v=20260912-contain">
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#061014;color:#dceeed;font:15px Arial,sans-serif}header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:#0b1b20;border-bottom:1px solid #244650}h1{margin:0;color:#39e6b0;letter-spacing:.12em}.badge{padding:7px 11px;border-radius:20px;background:#21363b}.ok{color:#39e6b0}.bad{color:#ff6767}.layout{display:grid;grid-template-columns:minmax(560px,1.65fr) minmax(340px,.75fr);gap:14px;padding:14px;align-items:start}.panel{background:#0e2228;border:1px solid #284b54;border-radius:12px;padding:16px}.camera-panel{grid-column:1;grid-row:1;padding:10px}.camera-head{display:flex;align-items:center;justify-content:space-between;padding:0 4px 8px}.camera-head h2{margin:0}.camera-stage{position:relative;width:100%;aspect-ratio:16/10;overflow:hidden;border-radius:9px;background:#020708}.camera-stage iframe{width:100%;height:100%;border:0;background:#020708}.camera-state{position:absolute;z-index:2;left:12px;top:12px;pointer-events:none}.control-panel{grid-column:1;grid-row:2}.telemetry-panel{grid-column:2;grid-row:1/span 2}.controls{display:grid;grid-template-columns:1fr 1fr;gap:12px}.value{font-size:30px;color:#fff;margin:8px 0}.bar{height:14px;background:#071418;border-radius:8px;overflow:hidden}.fill{height:100%;width:50%;background:#39e6b0;transition:width .08s}.steer{position:relative;height:62px;background:#071418;border-radius:8px}.needle{position:absolute;left:50%;top:7px;width:4px;height:48px;background:#39e6b0;transition:left .08s}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}button{border:0;border-radius:9px;padding:15px;font-weight:bold;font-size:16px;cursor:pointer}.arm{background:#39e6b0;color:#062018}.stop{background:#e63e45;color:white}.lock{background:#2b4349;color:white}.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{padding:13px;background:#102a30;border-radius:9px}.card b{display:block;font-size:22px;margin-top:6px;color:white}.notice{margin-top:12px;padding:12px;border-left:4px solid #f5b942;background:#2a2617}.dead{border-color:#39e6b0;box-shadow:0 0 0 2px #39e6b055}@media(max-width:980px){.layout{grid-template-columns:1fr}.camera-panel,.control-panel,.telemetry-panel{grid-column:1;grid-row:auto}}@media(max-width:760px){.controls{grid-template-columns:1fr}.camera-stage{aspect-ratio:16/10}}
+    .monitor-mode .telemetry-panel>.cards{display:none}.navigation-cards{display:grid;gap:12px}.navigation-cards .card{padding:18px}.navigation-cards b{font-size:22px}.telemetry-panel .notice{margin-top:18px}
+  </style>
+<link rel="stylesheet" href="/diagnostics.css"><script src="/diagnostics.js" defer></script></head>
+<body class="monitor-mode">
+<header style="flex-wrap:wrap;gap:10px"><h1>HARPOON</h1><span id="platformStatus" style="font-size:12px;color:#a9c4c9;flex:1" title="Поточний загальний трафік Ethernet, не максимальна швидкість інтернету">LAN — · RX — / TX — Мбіт/с · Pi — °C</span><span id="connection" class="badge bad">НЕМАЄ ЗВ'ЯЗКУ</span></header>
+<div class="monitor-note">Pi 5 · GPS-моніторинг. Керування STM ще не перенесене — команди на двигуни не надсилаються.</div>
+<main class="layout">
+  <section class="panel camera-panel">
+    <div class="camera-head"><h2>Головна камера</h2><div class="camera-buttons"><span id="cameraTransport" class="badge">WebRTC</span><button id="cameraSound" class="lock" aria-pressed="false">Звук: вимк.</button><span id="cameraConnection" class="badge">ПІДКЛЮЧЕННЯ…</span></div></div>
+    <div class="camera-stage">
+      <video id="cameraFrame" aria-label="Головна камера HARPOON" autoplay muted playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center"></video>
+      <div class="bottom-hud" aria-label="Показники навігації та витрати">
+      <div class="hud speed-hud"><div class="hud-label">ШВИДКІСТЬ GPS</div><strong id="gpsSpeed">—</strong><small>км/год</small></div>
+      <div class="hud compass-hud"><div class="rose">ПН · СХ · ПД · ЗХ</div><strong id="gpsHeading">—</strong><div class="hud-label" id="headingState">КУРС НЕ ВИЗНАЧЕНО</div></div>
+      <div class="hud gps-hud"><div id="gpsFix">GPS · НЕМАЄ ДАНИХ</div><small id="gpsDetail">Очікування UM982</small><small id="gpsCoords">Координати очікуються</small></div>
+      <div class="hud economy-hud" aria-label="Витратомір"><div><small>ВИТРАТА</small><strong id="ecoInstant">—</strong><span>Wh/км</span></div><div><small>СЕРЕДНЯ</small><strong id="ecoAverage">—</strong><span>Wh/км</span></div><div><small>ЗАПАС ХОДУ ≈</small><strong id="ecoRange">—</strong><span>км · без резерву</span></div><p id="ecoStatus">Очікування BMS і GPS</p></div>
+      </div>
+      <section id="mapPanel" class="hud map-pip" aria-label="GPS-карта">
+        <div class="map-toolbar"><span id="mapDrag" tabindex="0" role="button" aria-label="Перемістити карту мишкою або стрілками">⠿ КАРТА</span><div><button id="mapFollow" title="До човна" aria-label="Центрувати карту на човні">◎</button> <button id="mapExpand" aria-label="Розгорнути карту" aria-expanded="false">⛶</button></div></div>
+        <div id="gpsMap" class="map-canvas"></div><div id="mapEmpty" class="map-empty">Очікування достовірної GPS-позиції</div>
+        <button id="mapResize" class="map-resize" aria-label="Розмір карти: тягніть або використовуйте стрілки">◢</button>
+      </section>
+    </div>
+  </section>
+  <section class="panel diagnostic-panel" aria-labelledby="diag-title">
+    <div class="diag-head"><h2 id="diag-title">РЎС‚Р°РЅ Р±РѕСЂС‚Р°</h2><span id="diag-summary" class="diag-tag">РџРµСЂРµРІС–СЂРєР°вЂ¦</span></div>
+    <div id="diag-metrics" class="diag-metrics"></div>
+    <ul id="diag-issues" class="diag-issues" aria-live="polite"><li>РћС‡С–РєСѓРІР°РЅРЅСЏ РґС–Р°РіРЅРѕСЃС‚РёРєРё RaspberryвЂ¦</li></ul>
+    <div class="diag-foot"><span id="diag-updated">Р”Р°РЅС– С‰Рµ РЅРµ РѕС‚СЂРёРјР°РЅС–</span><span>Р–СѓСЂРЅР°Р» РЅР° SD В· 14 РґРЅС–РІ / 128 РњР‘</span></div>
+  </section>
+  <aside class="panel telemetry-panel"><h2>Навігація та телеметрія</h2>
+    <section aria-label="Зведені показники"><div class="cards unified-cards">
+      <div class="card priority">Потужність батареї<b id="bmPower">—</b></div>
+      <div class="card priority">Струм батареї<b id="bmCurrent">—</b></div>
+      <div class="card priority">Заряд<b id="bmSoc">—</b></div>
+      <div class="card priority">Пройдений шлях<b id="tmDistance">—</b></div>
+      <div class="card">Енергія від увімкнення<b id="bmWh">—</b></div>
+      <div class="card">Витрачено від увімкнення<b id="bmAh">—</b></div>
+      <div class="card">Середня витрата<b id="tmAverage">—</b></div>
+      <div class="card">Запас ходу ≈<b id="tmRange">—</b></div>
+      <div class="card">GPS / USB<b id="navLink">Очікування</b></div>
+      <div class="card">Позиція<b id="navPosition">Немає фікса</b></div>
+      <div class="card">Супутники<b id="navSatellites">—</b></div>
+      <div class="card">Курс / напрямок<b id="navHeading">Немає рішення</b></div>
+      <div class="card">JiKong BMS<b id="bmLink">Немає зв’язку</b></div>
+      <div class="card">Напруга<b id="bmVoltage">—</b></div>
+      <div class="card">Залишок ємності<b id="bmRemaining">—</b></div>
+      <div class="card">Повна ємність<b id="bmFull">—</b></div>
+      <div class="card">Кількість комірок<b id="bmCells">—</b></div>
+      <div class="card">Комірка min<b id="bmMin">—</b></div>
+      <div class="card">Комірка max<b id="bmMax">—</b></div>
+      <div class="card">Розбаланс<b id="bmDelta">—</b></div>
+      <div class="card">Температура MOS<b id="bmMos">—</b></div>
+      <div class="card">Температура T1<b id="bmT1">—</b></div>
+      <div class="card">Температура T2<b id="bmT2">—</b></div>
+    </div></section>
+    <section class="session-controls" aria-label="Журнал сесій">
+      <h3>Запис логу · 0,5 с</h3>
+      <div class="session-actions"><button id="sessionStart" class="arm">START · запис</button><button id="sessionStop" class="lock" disabled>SAVE · завершити</button></div>
+      <p id="sessionStatus" role="status">Завантаження журналу…</p>
+      <label for="sessionSelect">Збережені сесії</label>
+      <select id="sessionSelect"><option value="">Ще немає сесій</option></select>
+      <a id="sessionDownload" class="download-link" hidden>Завантажити CSV</a>
+      <div class="session-actions delete-actions"><button id="sessionDelete" class="lock" disabled>Видалити сесію</button><button id="sessionClear" class="lock" disabled>Очистити всі</button></div>
+      <small>Поїздка — від увімкнення до вимкнення Pi. START / SAVE та очищення логів не скидають шлях і витрати. CSV містить лічильники поїздки, час UTC та вік GPS-позиції.</small>
+    </section>
+    <div class="cards">
+    <div class="card">Режим<b id="mode">—</b></div><div class="card">RPM<b id="rpm">0</b></div>
+    <div class="card">Кут команди<b><span id="servo">0</span>°</b></div><div class="card">Тяга команди<b><span id="voltage">0.10</span> V</b></div>
+    <div class="card">Струм двигуна<b><span id="current">—</span> A</b></div><div class="card">Батарея<b><span id="battery">—</span> V</b></div>
+    <div class="card">Заряд батареї<b><span id="soc">—</span>%</b></div><div class="card">Струм батареї<b><span id="batteryCurrent">—</span> A</b></div>
+    <div class="card">Потужність батареї<b><span id="batteryPower">—</span> W</b></div><div class="card">JiKong BMS<b id="bmsState">НЕМАЄ ЗВ’ЯЗКУ</b></div>
+    <div class="card">Залишок / повна ємність<b><span id="remainingAh">—</span> / <span id="fullAh">—</span> Ah</b></div><div class="card">Використано BMS загалом<b><span id="totalUsedAh">—</span> Ah</b></div>
+    <div class="card">Витрачено за сесію<b><span id="sessionAh">0.000</span> Ah</b></div><div class="card">Енергія сесії<b><span id="sessionWh">0.0</span> Wh</b></div>
+    <div class="card">Різниця JiKong за сесію<b><span id="sessionBmsAh">—</span> Ah</b></div><div class="card">Тривалість сесії<b id="sessionDuration">00:00:00</b></div>
+    <div class="card">Тумблер ARM<b id="armState">ВИМКНЕНО</b></div><div class="card">Журнал сесії<b id="sessionLog">ГОТОВО</b></div>
+    <div class="card">Комірки min / max<b><span id="cellRange">—</span></b></div><div class="card">Розбаланс<b><span id="cellDelta">—</span> mV</b></div>
+    <div class="card">Температура MOS<b><span id="bmsTemp">—</span> °C</b></div><div class="card">Комірок<b id="cellCount">—</b></div>
+    <div class="card">DC живлення<b id="dcPower">1:OFF 2:OFF 3:OFF</b></div><div class="card">Контролер<b>STM32 G431</b></div>
+    <div class="card">Камера<b id="cameraIndex">1</b></div><div class="card">Стан<b id="reason">—</b></div>
+  </div></aside>
+</main>
+<script>document.addEventListener('DOMContentLoaded',()=>window.startCameraPlayer?.(),{once:true});</script>
+</body></html>
